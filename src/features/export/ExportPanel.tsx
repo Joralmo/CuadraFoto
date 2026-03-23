@@ -1,0 +1,193 @@
+import { ActionButton } from '../../components/ActionButton';
+import { SectionCard } from '../../components/SectionCard';
+import type {
+  ExportFormat,
+  ExportResolutionOption,
+  ExportSettings
+} from '../../types/export';
+
+type ExportPanelProps = {
+  error: string | null;
+  isExporting: boolean;
+  lastMessage: string | null;
+  resolutionOptions: ExportResolutionOption[];
+  settings: ExportSettings;
+  onExport: () => void;
+  onFormatChange: (format: ExportFormat) => void;
+  onJpgQualityChange: (value: number) => void;
+  onResolutionChange: (resolutionId: string) => void;
+};
+
+function optionButtonClass(isActive: boolean) {
+  return [
+    'min-h-16 rounded-[1.35rem] border px-4 py-3 text-left transition active:scale-[0.99]',
+    isActive
+      ? 'border-ink bg-ink text-white ring-2 ring-ink/15 shadow-[0_14px_28px_rgba(23,23,23,0.14)]'
+      : 'border-black/10 bg-mist text-black/70 hover:bg-white'
+  ].join(' ');
+}
+
+export function ExportPanel({
+  error,
+  isExporting,
+  lastMessage,
+  resolutionOptions,
+  settings,
+  onExport,
+  onFormatChange,
+  onJpgQualityChange,
+  onResolutionChange
+}: ExportPanelProps) {
+  return (
+    <SectionCard
+      className="border-clay/20 bg-[linear-gradient(180deg,rgba(255,250,243,0.98),rgba(244,236,223,0.98))]"
+      eyebrow="Exportación"
+      title="Descargar imagen final"
+      description="Elige el formato que prefieras y guarda tu imagen en un toque."
+    >
+      <div className="space-y-5">
+        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+          <div className="rounded-2xl border border-black/10 bg-white/80 px-2 py-3 text-black/60">
+            Formato
+            <div className="mt-1 font-semibold text-ink">
+              {settings.format.toUpperCase()}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-black/10 bg-white/80 px-2 py-3 text-black/60">
+            Tamaño
+            <div className="mt-1 font-semibold text-ink">{settings.size}px</div>
+          </div>
+          <div className="rounded-2xl border border-black/10 bg-white/80 px-2 py-3 text-black/60">
+            Calidad
+            <div className="mt-1 font-semibold text-ink">
+              {settings.format === 'jpg'
+                ? `${Math.round(settings.jpgQuality * 100)}%`
+                : 'Máxima'}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm font-medium text-ink">
+            <span>Formato</span>
+            <span className="text-xs text-black/50">PNG o JPG</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              className={optionButtonClass(settings.format === 'jpg')}
+              aria-pressed={settings.format === 'jpg'}
+              onClick={() => {
+                onFormatChange('jpg');
+              }}
+            >
+              <p className="text-sm font-semibold">JPG</p>
+              <p className="mt-1 text-xs opacity-80">Más liviano y recomendado</p>
+            </button>
+
+            <button
+              type="button"
+              className={optionButtonClass(settings.format === 'png')}
+              aria-pressed={settings.format === 'png'}
+              onClick={() => {
+                onFormatChange('png');
+              }}
+            >
+              <p className="text-sm font-semibold">PNG</p>
+              <p className="mt-1 text-xs opacity-80">Sin pérdida, archivo más pesado</p>
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm font-medium text-ink">
+            <span>Resolución final</span>
+            <span className="text-xs text-black/50">{settings.size} x {settings.size}</span>
+          </div>
+
+          <div className="grid gap-3">
+            {resolutionOptions.map((option) => {
+              const isActive = settings.resolutionId === option.id;
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={optionButtonClass(isActive)}
+                  aria-pressed={isActive}
+                  onClick={() => {
+                    onResolutionChange(option.id);
+                  }}
+                >
+                  <p className="text-sm font-semibold">
+                    {option.label}
+                    {option.isRecommended ? ' · Recomendado' : ''}
+                  </p>
+                  <p className="mt-1 text-xs opacity-80">{option.description}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {settings.format === 'jpg' ? (
+          <label className="block space-y-2">
+            <div className="flex items-center justify-between text-sm font-medium text-ink">
+              <span>Calidad JPG</span>
+              <span>{Math.round(settings.jpgQuality * 100)}%</span>
+            </div>
+
+            <input
+              type="range"
+              min="0.7"
+              max="1"
+              step="0.01"
+              value={settings.jpgQuality}
+              onChange={(event) => {
+                onJpgQualityChange(Number(event.target.value));
+              }}
+              className="touch-slider"
+            />
+
+            <p className="text-xs leading-5 text-black/55">
+              El valor por defecto es 92%, un buen equilibrio entre peso y calidad.
+            </p>
+          </label>
+        ) : null}
+
+        <div className="rounded-[1.5rem] border border-black/10 bg-mist px-4 py-3 text-xs leading-5 text-black/55">
+          Si la descarga no empieza al instante, abriremos la imagen para que puedas guardarla.
+        </div>
+
+        {error ? (
+          <div
+            role="alert"
+            className="rounded-[1.5rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          >
+            {error}
+          </div>
+        ) : null}
+
+        {lastMessage ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+          >
+            {lastMessage}
+          </div>
+        ) : null}
+
+        <ActionButton
+          className="shadow-[0_18px_36px_rgba(23,23,23,0.18)]"
+          disabled={isExporting}
+          size="large"
+          onClick={onExport}
+        >
+          {isExporting ? 'Exportando...' : `Descargar ${settings.size} x ${settings.size}`}
+        </ActionButton>
+      </div>
+    </SectionCard>
+  );
+}

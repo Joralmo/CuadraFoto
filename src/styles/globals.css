@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  font-family: "SF Pro Text", "Avenir Next", "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  background-color: #f4ecdf;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+canvas:focus-visible {
+  outline: 3px solid rgba(161, 93, 67, 0.38);
+  outline-offset: 3px;
+}
+
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+@layer base {
+  body {
+    @apply text-ink;
+  }
+
+  ::selection {
+    @apply bg-sand text-ink;
+  }
+}
+
+@layer utilities {
+  .safe-px {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  .safe-pb {
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-pt {
+    padding-top: max(1.5rem, env(safe-area-inset-top));
+  }
+
+  .touch-slider {
+    @apply h-9 w-full cursor-pointer;
+  }
+
+  .touch-slider::-webkit-slider-runnable-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, rgba(220, 199, 162, 0.95), rgba(161, 93, 67, 0.55));
+  }
+
+  .touch-slider::-moz-range-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, rgba(220, 199, 162, 0.95), rgba(161, 93, 67, 0.55));
+  }
+
+  .touch-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    margin-top: -10px;
+    height: 28px;
+    width: 28px;
+    border-radius: 9999px;
+    border: 2px solid rgba(23, 23, 23, 0.12);
+    background: #fffaf3;
+    box-shadow: 0 8px 18px rgba(23, 23, 23, 0.16);
+  }
+
+  .touch-slider::-moz-range-thumb {
+    height: 28px;
+    width: 28px;
+    border-radius: 9999px;
+    border: 2px solid rgba(23, 23, 23, 0.12);
+    background: #fffaf3;
+    box-shadow: 0 8px 18px rgba(23, 23, 23, 0.16);
+  }
+}
