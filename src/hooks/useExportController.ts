@@ -46,7 +46,7 @@ function getSuccessMessage(method: ExportDeliveryMethod) {
     case 'share':
       return 'La imagen se abrió en la hoja de compartir de tu dispositivo.';
     case 'open':
-      return 'La imagen se abrió en una nueva pestaña para guardarla o compartirla.';
+      return 'La imagen se abrió para que puedas guardarla o compartirla.';
     case 'download':
       return 'La imagen se descargó correctamente.';
     case 'cancelled':

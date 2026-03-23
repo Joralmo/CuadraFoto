@@ -19,6 +19,8 @@ type DeliverExportOptions = {
   helperWindow?: Window | null;
 };
 
+const CANVAS_TO_BLOB_TIMEOUT_MS = 2500;
+
 function createCanvas(size: number) {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -62,7 +64,35 @@ async function canvasToBlob(
   quality?: number
 ) {
   const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob(resolve, mimeType, quality);
+    let isSettled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (isSettled) {
+        return;
+      }
+
+      isSettled = true;
+      resolve(null);
+    }, CANVAS_TO_BLOB_TIMEOUT_MS);
+
+    try {
+      canvas.toBlob((nextBlob) => {
+        if (isSettled) {
+          return;
+        }
+
+        isSettled = true;
+        window.clearTimeout(timeoutId);
+        resolve(nextBlob);
+      }, mimeType, quality);
+    } catch {
+      if (isSettled) {
+        return;
+      }
+
+      isSettled = true;
+      window.clearTimeout(timeoutId);
+      resolve(null);
+    }
   });
 
   if (blob) {
@@ -88,6 +118,21 @@ function isIosLike() {
   }
 
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function isStandaloneMode() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return false;
+  }
+
+  const navigatorWithStandalone = navigator as Navigator & {
+    standalone?: boolean;
+  };
+
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    navigatorWithStandalone.standalone === true
+  );
 }
 
 export function shouldPrepareExportWindow() {
@@ -187,7 +232,7 @@ export async function deliverExportedImage(
   options: DeliverExportOptions = {}
 ): Promise<ExportDeliveryMethod> {
   const { helperWindow = null } = options;
-  const shouldPreferShare = isIosLike();
+  const shouldPreferShare = isIosLike() && !isStandaloneMode();
 
   if (shouldPreferShare) {
     const shared = await tryShareExport(result);
