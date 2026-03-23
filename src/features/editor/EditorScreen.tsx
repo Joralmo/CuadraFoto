@@ -166,14 +166,22 @@ export function EditorScreen({ image }: EditorScreenProps) {
         error={exportController.status.error}
         isExporting={exportController.status.isExporting}
         lastMessage={exportController.status.lastMessage}
+        preparedImageName={exportController.preparedResult?.fileName ?? null}
         resolutionOptions={exportController.resolutionOptions}
         settings={exportController.settings}
+        onClearPrepared={exportController.clearPreparedResult}
         onExport={() => {
           void exportController.exportImage();
         }}
         onFormatChange={exportController.setFormat}
         onJpgQualityChange={exportController.setJpgQuality}
+        onOpenPrepared={() => {
+          void exportController.openPreparedImage();
+        }}
         onResolutionChange={exportController.setResolutionId}
+        onSharePrepared={() => {
+          void exportController.sharePreparedImage();
+        }}
       />
     </div>
   );

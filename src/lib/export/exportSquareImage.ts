@@ -17,6 +17,8 @@ type ExportSquareImageOptions = {
 
 type DeliverExportOptions = {
   helperWindow?: Window | null;
+  openInSameWindow?: boolean;
+  preferShare?: boolean;
 };
 
 const CANVAS_TO_BLOB_TIMEOUT_MS = 2500;
@@ -120,7 +122,7 @@ function isIosLike() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent);
 }
 
-function isStandaloneMode() {
+export function isStandaloneMode() {
   if (typeof window === 'undefined' || typeof navigator === 'undefined') {
     return false;
   }
@@ -136,10 +138,14 @@ function isStandaloneMode() {
 }
 
 export function shouldPrepareExportWindow() {
-  return isIosLike();
+  return false;
 }
 
-async function tryShareExport(
+export function shouldUseStagedExportFlow() {
+  return isIosLike() && isStandaloneMode();
+}
+
+export async function shareExportedImage(
   result: ExportResult
 ): Promise<ExportDeliveryMethod | null> {
   const navigatorWithShare = navigator as Navigator & {
@@ -231,11 +237,15 @@ export async function deliverExportedImage(
   result: ExportResult,
   options: DeliverExportOptions = {}
 ): Promise<ExportDeliveryMethod> {
-  const { helperWindow = null } = options;
-  const shouldPreferShare = isIosLike() && !isStandaloneMode();
+  const {
+    helperWindow = null,
+    openInSameWindow = false,
+    preferShare = isIosLike() && !isStandaloneMode()
+  } = options;
+  const shouldPreferShare = preferShare;
 
   if (shouldPreferShare) {
-    const shared = await tryShareExport(result);
+    const shared = await shareExportedImage(result);
 
     if (shared) {
       helperWindow?.close();
@@ -259,6 +269,11 @@ export async function deliverExportedImage(
       document.body.removeChild(link);
 
       return 'download';
+    }
+
+    if (openInSameWindow) {
+      window.location.assign(objectUrl);
+      return 'open';
     }
 
     if (helperWindow) {

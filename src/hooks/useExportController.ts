@@ -10,13 +10,16 @@ import {
 import {
   deliverExportedImage,
   exportSquareImage,
-  shouldPrepareExportWindow
+  shareExportedImage,
+  shouldPrepareExportWindow,
+  shouldUseStagedExportFlow
 } from '../lib/export/exportSquareImage';
 import type { EditorState } from '../types/editor';
 import type {
   ExportDeliveryMethod,
   ExportFormat,
   ExportResolutionOption,
+  ExportResult,
   ExportSettings
 } from '../types/export';
 import type { LoadedImageAsset } from '../types/image';
@@ -85,6 +88,7 @@ export function useExportController(
       jpgQuality: persistedJpgQuality
     })
   );
+  const [preparedResult, setPreparedResult] = useState<ExportResult | null>(null);
   const [status, setStatus] = useState<ExportStatus>(initialStatus);
 
   useEffect(() => {
@@ -94,6 +98,7 @@ export function useExportController(
         jpgQuality: persistedJpgQuality
       })
     );
+    setPreparedResult(null);
     setStatus(initialStatus);
   }, [image]);
 
@@ -113,8 +118,12 @@ export function useExportController(
 
   return {
     resolutionOptions,
+    preparedResult,
     settings,
     status,
+    clearPreparedResult: () => {
+      setPreparedResult(null);
+    },
     setFormat: (format: ExportFormat) => {
       setSettings((currentSettings) => ({
         ...currentSettings,
@@ -148,6 +157,8 @@ export function useExportController(
       const helperWindow =
         shouldPrepareExportWindow() ? window.open('', '_blank') : null;
 
+      setPreparedResult(null);
+
       if (helperWindow) {
         helperWindow.document.title = 'CuadraFoto';
         helperWindow.document.body.style.margin = '0';
@@ -176,6 +187,18 @@ export function useExportController(
           jpgQuality: settings.jpgQuality,
           size: settings.size
         });
+
+        if (shouldUseStagedExportFlow()) {
+          setPreparedResult(result);
+          setStatus({
+            error: null,
+            isExporting: false,
+            lastMessage: 'La imagen está lista. Elige si quieres compartirla o abrirla.',
+            lastMethod: null
+          });
+          return;
+        }
+
         const method = await deliverExportedImage(result, {
           helperWindow
         });
@@ -193,6 +216,88 @@ export function useExportController(
             : 'No se pudo exportar la imagen.';
 
         helperWindow?.close();
+
+        setStatus({
+          error: message,
+          isExporting: false,
+          lastMessage: null,
+          lastMethod: null
+        });
+      }
+    },
+    openPreparedImage: async () => {
+      if (!preparedResult) {
+        return;
+      }
+
+      setStatus({
+        error: null,
+        isExporting: false,
+        lastMessage: null,
+        lastMethod: null
+      });
+
+      try {
+        const method = await deliverExportedImage(preparedResult, {
+          openInSameWindow: shouldUseStagedExportFlow(),
+          preferShare: false
+        });
+
+        setPreparedResult(null);
+        setStatus({
+          error: null,
+          isExporting: false,
+          lastMessage: getSuccessMessage(method),
+          lastMethod: method
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'No se pudo abrir la imagen.';
+
+        setStatus({
+          error: message,
+          isExporting: false,
+          lastMessage: null,
+          lastMethod: null
+        });
+      }
+    },
+    sharePreparedImage: async () => {
+      if (!preparedResult) {
+        return;
+      }
+
+      setStatus({
+        error: null,
+        isExporting: false,
+        lastMessage: null,
+        lastMethod: null
+      });
+
+      try {
+        const method = await shareExportedImage(preparedResult);
+
+        if (!method) {
+          throw new Error('No se pudo abrir la opción de compartir en este dispositivo.');
+        }
+
+        if (method !== 'cancelled') {
+          setPreparedResult(null);
+        }
+
+        setStatus({
+          error: null,
+          isExporting: false,
+          lastMessage: getSuccessMessage(method),
+          lastMethod: method
+        });
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'No se pudo compartir la imagen.';
 
         setStatus({
           error: message,

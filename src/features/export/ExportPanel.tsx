@@ -10,12 +10,16 @@ type ExportPanelProps = {
   error: string | null;
   isExporting: boolean;
   lastMessage: string | null;
+  preparedImageName?: string | null;
   resolutionOptions: ExportResolutionOption[];
   settings: ExportSettings;
+  onClearPrepared: () => void;
   onExport: () => void;
   onFormatChange: (format: ExportFormat) => void;
   onJpgQualityChange: (value: number) => void;
+  onOpenPrepared: () => void;
   onResolutionChange: (resolutionId: string) => void;
+  onSharePrepared: () => void;
 };
 
 function optionButtonClass(isActive: boolean) {
@@ -31,12 +35,16 @@ export function ExportPanel({
   error,
   isExporting,
   lastMessage,
+  preparedImageName = null,
   resolutionOptions,
   settings,
+  onClearPrepared,
   onExport,
   onFormatChange,
   onJpgQualityChange,
-  onResolutionChange
+  onOpenPrepared,
+  onResolutionChange,
+  onSharePrepared
 }: ExportPanelProps) {
   return (
     <SectionCard
@@ -160,6 +168,39 @@ export function ExportPanel({
           Si la descarga no empieza al instante, abriremos la imagen para que puedas guardarla.
         </div>
 
+        {preparedImageName ? (
+          <div className="space-y-3 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-4">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-emerald-900">
+                Tu imagen ya está lista
+              </p>
+              <p className="text-xs leading-5 text-emerald-900/75">
+                Elige si quieres compartirla o abrirla para guardarla.
+              </p>
+              <p className="text-xs leading-5 text-emerald-900/60">
+                {preparedImageName}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <ActionButton size="default" onClick={onSharePrepared}>
+                Compartir
+              </ActionButton>
+              <ActionButton size="default" variant="secondary" onClick={onOpenPrepared}>
+                Abrir imagen
+              </ActionButton>
+            </div>
+
+            <button
+              type="button"
+              className="w-full text-center text-xs font-medium text-emerald-900/75"
+              onClick={onClearPrepared}
+            >
+              Cerrar
+            </button>
+          </div>
+        ) : null}
+
         {error ? (
           <div
             role="alert"
@@ -185,7 +226,7 @@ export function ExportPanel({
           size="large"
           onClick={onExport}
         >
-          {isExporting ? 'Exportando...' : `Descargar ${settings.size} x ${settings.size}`}
+          {isExporting ? 'Preparando imagen...' : `Descargar ${settings.size} x ${settings.size}`}
         </ActionButton>
       </div>
     </SectionCard>
