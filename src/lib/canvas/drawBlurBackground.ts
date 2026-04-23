@@ -8,7 +8,8 @@ type DrawBlurBackgroundOptions = {
   image: RenderableImageSource;
   imageWidth: number;
   imageHeight: number;
-  size: number;
+  targetWidth: number;
+  targetHeight: number;
   blurAmount: number;
   qualityHint?: ExportQualityHint;
 };
@@ -78,38 +79,46 @@ function setCachedCanvas(
 }
 
 function getWorkingCanvasSize(
-  size: number,
+  targetWidth: number,
+  targetHeight: number,
   blurAmount: number,
   qualityHint: ExportQualityHint
 ) {
   const blurProfile = getBlurSupportProfile();
-  const targetSize =
+  const targetMaxSide =
     qualityHint === 'export'
       ? blurProfile.prefersConservativeCanvas
-        ? Math.min(size, 420)
-        : Math.min(size, 560)
+        ? Math.min(Math.max(targetWidth, targetHeight), 420)
+        : Math.min(Math.max(targetWidth, targetHeight), 560)
       : blurProfile.prefersConservativeCanvas
-        ? Math.min(size, 220)
-        : Math.min(size, 300);
+        ? Math.min(Math.max(targetWidth, targetHeight), 220)
+        : Math.min(Math.max(targetWidth, targetHeight), 300);
 
-  if (blurAmount >= 28) {
-    return Math.max(140, Math.round(targetSize * 0.72));
-  }
+  const adjustedMaxSide =
+    blurAmount >= 28
+      ? Math.max(140, Math.round(targetMaxSide * 0.72))
+      : blurAmount >= 18
+        ? Math.max(160, Math.round(targetMaxSide * 0.84))
+        : targetMaxSide;
+  const scale = Math.min(1, adjustedMaxSide / Math.max(targetWidth, targetHeight));
 
-  if (blurAmount >= 18) {
-    return Math.max(160, Math.round(targetSize * 0.84));
-  }
-
-  return targetSize;
+  return {
+    height: Math.max(12, Math.round(targetHeight * scale)),
+    width: Math.max(12, Math.round(targetWidth * scale))
+  };
 }
 
-function getEffectiveBlurRadius(blurAmount: number, sourceSize: number, outputSize: number) {
+function getEffectiveBlurRadius(
+  blurAmount: number,
+  sourceMaxSide: number,
+  outputMaxSide: number
+) {
   if (blurAmount === 0) {
     return 0;
   }
 
   const blurProfile = getBlurSupportProfile();
-  const sizeRatio = sourceSize / outputSize;
+  const sizeRatio = sourceMaxSide / outputMaxSide;
   const baseRadius = Math.max(1, blurAmount * sizeRatio);
 
   return blurProfile.isSafariLike
@@ -278,18 +287,28 @@ function getCachedBlurBackground({
   image,
   imageWidth,
   imageHeight,
-  size,
+  targetWidth,
+  targetHeight,
   blurAmount,
   qualityHint = 'preview'
 }: Omit<DrawBlurBackgroundOptions, 'ctx'>) {
   const blurProfile = getBlurSupportProfile();
-  const workingSize = getWorkingCanvasSize(size, blurAmount, qualityHint);
-  const effectiveRadius = getEffectiveBlurRadius(blurAmount, workingSize, size);
+  const workingSize = getWorkingCanvasSize(
+    targetWidth,
+    targetHeight,
+    blurAmount,
+    qualityHint
+  );
+  const effectiveRadius = getEffectiveBlurRadius(
+    blurAmount,
+    Math.max(workingSize.width, workingSize.height),
+    Math.max(targetWidth, targetHeight)
+  );
   const cacheKey = [
     blurProfile.engine,
     qualityHint,
     blurProfile.prefersConservativeCanvas ? 'conservative' : 'default',
-    workingSize,
+    `${workingSize.width}x${workingSize.height}`,
     blurAmount,
     effectiveRadius.toFixed(2)
   ].join(':');
@@ -300,7 +319,7 @@ function getCachedBlurBackground({
     return cachedCanvas;
   }
 
-  const baseCanvas = createCanvasElement(workingSize, workingSize);
+  const baseCanvas = createCanvasElement(workingSize.width, workingSize.height);
   drawBaseCoverImage(baseCanvas, image, imageWidth, imageHeight, blurAmount);
 
   const renderedCanvas =
@@ -322,11 +341,17 @@ export function drawBlurBackground({
   image,
   imageWidth,
   imageHeight,
-  size,
+  targetWidth,
+  targetHeight,
   blurAmount,
   qualityHint = 'preview'
 }: DrawBlurBackgroundOptions) {
-  const coverRect = getCoverRect(imageWidth, imageHeight, size, size);
+  const coverRect = getCoverRect(
+    imageWidth,
+    imageHeight,
+    targetWidth,
+    targetHeight
+  );
 
   ctx.save();
   ctx.imageSmoothingEnabled = true;
@@ -339,18 +364,19 @@ export function drawBlurBackground({
       image,
       imageWidth,
       imageHeight,
-      size,
+      targetWidth,
+      targetHeight,
       blurAmount,
       qualityHint
     });
 
-    ctx.drawImage(cachedBlurCanvas, 0, 0, size, size);
+    ctx.drawImage(cachedBlurCanvas, 0, 0, targetWidth, targetHeight);
   }
 
   ctx.restore();
 
   ctx.save();
   ctx.fillStyle = 'rgba(255, 250, 243, 0.12)';
-  ctx.fillRect(0, 0, size, size);
+  ctx.fillRect(0, 0, targetWidth, targetHeight);
   ctx.restore();
 }

@@ -32,8 +32,8 @@ export function App() {
               CuadraFoto
             </h1>
             <p className="max-w-md text-sm leading-6 text-black/70">
-              Convierte tus fotos en formato cuadrado, ajusta el encuadre y
-              descárgalas listas para publicar.
+              Convierte tus fotos en formatos tipo Instagram, ajusta el encuadre
+              y descárgalas listas para publicar.
             </p>
           </div>
         </div>
@@ -86,7 +86,7 @@ export function App() {
         <SectionCard
           eyebrow="Editor"
           title="Listo para editar"
-          description="Aquí verás tu foto cuadrada para moverla, ajustar el fondo y descargarla."
+          description="Aquí verás tu foto en formato Instagram para moverla, ajustar el fondo y descargarla."
         >
           <div className="rounded-[1.75rem] border border-dashed border-black/15 bg-white/55 px-4 py-10 text-center text-sm leading-6 text-black/55">
             Sube una imagen para empezar.

@@ -29,10 +29,11 @@ export interface CanvasDrawRect {
   height: number;
 }
 
-export interface SquareCompositionOptions {
+export interface CanvasCompositionOptions {
   ctx: CanvasRenderingContext2D;
   image: LoadedImageAsset;
   editorState: EditorState;
   qualityHint?: ExportQualityHint;
-  size: number;
+  targetHeight: number;
+  targetWidth: number;
 }

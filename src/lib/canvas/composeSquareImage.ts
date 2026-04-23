@@ -1,11 +1,11 @@
-import type { SquareCompositionOptions } from '../../types/editor';
+import type { CanvasCompositionOptions } from '../../types/editor';
 import { drawBlurBackground } from './drawBlurBackground';
 import { drawColorBackground } from './drawColorBackground';
 import { drawMainImage } from './drawMainImage';
 
 function getCompositionSource(
-  image: SquareCompositionOptions['image'],
-  qualityHint: NonNullable<SquareCompositionOptions['qualityHint']>
+  image: CanvasCompositionOptions['image'],
+  qualityHint: NonNullable<CanvasCompositionOptions['qualityHint']>
 ) {
   if (qualityHint === 'export') {
     return {
@@ -22,19 +22,25 @@ function getCompositionSource(
   };
 }
 
-export function composeSquareImage({
+export function composeExportImage({
   ctx,
   editorState,
   image,
   qualityHint = 'preview',
-  size
-}: SquareCompositionOptions) {
+  targetWidth,
+  targetHeight
+}: CanvasCompositionOptions) {
   const compositionSource = getCompositionSource(image, qualityHint);
 
-  ctx.clearRect(0, 0, size, size);
+  ctx.clearRect(0, 0, targetWidth, targetHeight);
 
   if (editorState.backgroundMode === 'color') {
-    drawColorBackground(ctx, size, editorState.backgroundColor);
+    drawColorBackground(
+      ctx,
+      targetWidth,
+      targetHeight,
+      editorState.backgroundColor
+    );
   } else {
     drawBlurBackground({
       ctx,
@@ -42,7 +48,8 @@ export function composeSquareImage({
       imageWidth: compositionSource.width,
       imageHeight: compositionSource.height,
       qualityHint,
-      size,
+      targetWidth,
+      targetHeight,
       blurAmount: editorState.blurAmount
     });
   }
@@ -52,7 +59,8 @@ export function composeSquareImage({
     image: compositionSource.source,
     imageWidth: compositionSource.width,
     imageHeight: compositionSource.height,
-    size,
+    targetWidth,
+    targetHeight,
     scale: editorState.scale,
     offsetX: editorState.offsetX,
     offsetY: editorState.offsetY

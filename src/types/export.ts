@@ -2,28 +2,33 @@ export type ExportFormat = 'png' | 'jpg';
 
 export type ExportQualityHint = 'preview' | 'export';
 
-export interface ExportResolutionOption {
+export type ExportPresetId = 'story' | 'portrait' | 'square' | 'landscape';
+
+export interface ExportPresetOption {
   description: string;
-  id: string;
+  height: number;
+  id: ExportPresetId;
   isRecommended?: boolean;
   label: string;
-  size: number;
+  ratioLabel: string;
+  width: number;
 }
 
 export interface ExportSettings {
   format: ExportFormat;
+  height: number;
   jpgQuality: number;
-  resolutionId: string;
-  size: number;
+  presetId: ExportPresetId;
+  width: number;
 }
 
 export interface ExportResult {
   blob: Blob;
   fileName: string;
   format: ExportFormat;
+  height: number;
   mimeType: string;
-  size: number;
+  width: number;
 }
 
 export type ExportDeliveryMethod = 'download' | 'open' | 'share' | 'cancelled';
-

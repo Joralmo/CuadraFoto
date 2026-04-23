@@ -1,5 +1,5 @@
 import type { BackgroundMode } from './editor';
-import type { ExportFormat } from './export';
+import type { ExportFormat, ExportPresetId } from './export';
 
 export interface EditorPreferences {
   backgroundMode: BackgroundMode;
@@ -9,5 +9,5 @@ export interface EditorPreferences {
 export interface ExportPreferences {
   format: ExportFormat;
   jpgQuality: number;
+  presetId: ExportPresetId;
 }
-

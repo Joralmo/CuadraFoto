@@ -12,6 +12,7 @@ import {
   DEFAULT_BLUR,
   editorReducer
 } from './editor.reducer';
+import { FormatPresetSelector } from './FormatPresetSelector';
 import { PreviewCanvas } from './PreviewCanvas';
 import { TransformControls } from './TransformControls';
 import type { BackgroundMode } from '../../types/editor';
@@ -68,6 +69,7 @@ export function EditorScreen({ image }: EditorScreenProps) {
     isLoading: isPaletteLoading
   } = useSuggestedPalette(image);
   const exportController = useExportController(image, editorState);
+  const selectedPreset = exportController.selectedPreset;
 
   useEffect(() => {
     dispatch({
@@ -100,8 +102,8 @@ export function EditorScreen({ image }: EditorScreenProps) {
       <SectionCard
         className="overflow-hidden p-0"
         eyebrow="Editor"
-        title="Vista cuadrada"
-        description="Mueve la foto, ajusta el zoom y comprueba cómo quedará antes de descargarla."
+        title={`Vista ${selectedPreset.ratioLabel}`}
+        description="Elige el tamaño tipo Instagram, mueve la foto y comprueba cómo quedará antes de descargarla."
         bodyClassName="space-y-0"
       >
         <div className="space-y-4 px-4 pb-4 sm:px-5 sm:pb-5">
@@ -115,11 +117,21 @@ export function EditorScreen({ image }: EditorScreenProps) {
             <span className="rounded-full border border-black/10 bg-mist px-3 py-1">
               {formatFileSize(image.fileSize)}
             </span>
+            <span className="rounded-full border border-black/10 bg-mist px-3 py-1">
+              {selectedPreset.label} · {selectedPreset.width} x {selectedPreset.height}
+            </span>
           </div>
+
+          <FormatPresetSelector
+            options={exportController.presetOptions}
+            selectedId={exportController.settings.presetId}
+            onChange={exportController.setPresetId}
+          />
 
           <PreviewCanvas
             editorState={editorState}
             image={image}
+            preset={selectedPreset}
             onPan={(deltaX, deltaY) => {
               dispatch({
                 type: 'pan',
@@ -167,7 +179,7 @@ export function EditorScreen({ image }: EditorScreenProps) {
         isExporting={exportController.status.isExporting}
         lastMessage={exportController.status.lastMessage}
         preparedImageName={exportController.preparedResult?.fileName ?? null}
-        resolutionOptions={exportController.resolutionOptions}
+        selectedPreset={selectedPreset}
         settings={exportController.settings}
         onClearPrepared={exportController.clearPreparedResult}
         onExport={() => {
@@ -178,7 +190,6 @@ export function EditorScreen({ image }: EditorScreenProps) {
         onOpenPrepared={() => {
           void exportController.openPreparedImage();
         }}
-        onResolutionChange={exportController.setResolutionId}
         onSharePrepared={() => {
           void exportController.sharePreparedImage();
         }}

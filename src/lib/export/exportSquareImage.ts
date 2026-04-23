@@ -1,4 +1,4 @@
-import { composeSquareImage } from '../canvas/composeSquareImage';
+import { composeExportImage } from '../canvas/composeSquareImage';
 import type { EditorState } from '../../types/editor';
 import type {
   ExportDeliveryMethod,
@@ -9,10 +9,11 @@ import type { LoadedImageAsset } from '../../types/image';
 
 type ExportSquareImageOptions = {
   format: ExportFormat;
+  height: number;
   image: LoadedImageAsset;
   editorState: EditorState;
   jpgQuality: number;
-  size: number;
+  width: number;
 };
 
 type DeliverExportOptions = {
@@ -23,10 +24,10 @@ type DeliverExportOptions = {
 
 const CANVAS_TO_BLOB_TIMEOUT_MS = 2500;
 
-function createCanvas(size: number) {
+function createCanvas(width: number, height: number) {
   const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = width;
+  canvas.height = height;
 
   return canvas;
 }
@@ -52,12 +53,13 @@ function getExportMimeType(format: ExportFormat) {
 function buildExportFileName(
   sourceName: string,
   format: ExportFormat,
-  size: number
+  width: number,
+  height: number
 ) {
   const baseName = sanitizeBaseName(sourceName);
   const extension = format === 'png' ? 'png' : 'jpg';
 
-  return `${baseName}-cuadrafoto-${size}.${extension}`;
+  return `${baseName}-cuadrafoto-${width}x${height}.${extension}`;
 }
 
 async function canvasToBlob(
@@ -186,16 +188,17 @@ export async function shareExportedImage(
 
 export async function exportSquareImage({
   format,
+  height,
   image,
   editorState,
   jpgQuality,
-  size
+  width
 }: ExportSquareImageOptions): Promise<ExportResult> {
   if (typeof document === 'undefined') {
     throw new Error('La exportación solo está disponible en el navegador.');
   }
 
-  const canvas = createCanvas(size);
+  const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
   if (!ctx) {
@@ -206,11 +209,12 @@ export async function exportSquareImage({
   ctx.imageSmoothingQuality = 'high';
 
   try {
-    composeSquareImage({
+    composeExportImage({
       ctx,
       editorState,
       image,
-      size,
+      targetWidth: width,
+      targetHeight: height,
       qualityHint: 'export'
     });
 
@@ -223,10 +227,11 @@ export async function exportSquareImage({
 
     return {
       blob,
-      fileName: buildExportFileName(image.fileName, format, size),
+      fileName: buildExportFileName(image.fileName, format, width, height),
       format,
+      height,
       mimeType,
-      size
+      width
     };
   } finally {
     releaseCanvas(canvas);

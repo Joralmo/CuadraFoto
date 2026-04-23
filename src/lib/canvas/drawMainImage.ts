@@ -6,7 +6,8 @@ type DrawMainImageOptions = {
   image: RenderableImageSource;
   imageWidth: number;
   imageHeight: number;
-  size: number;
+  targetWidth: number;
+  targetHeight: number;
   scale: number;
   offsetX: number;
   offsetY: number;
@@ -17,16 +18,22 @@ export function drawMainImage({
   image,
   imageWidth,
   imageHeight,
-  size,
+  targetWidth,
+  targetHeight,
   scale,
   offsetX,
   offsetY
 }: DrawMainImageOptions) {
-  const containRect = getContainRect(imageWidth, imageHeight, size, size);
+  const containRect = getContainRect(
+    imageWidth,
+    imageHeight,
+    targetWidth,
+    targetHeight
+  );
   const scaledWidth = containRect.width * scale;
   const scaledHeight = containRect.height * scale;
-  const drawX = (size - scaledWidth) / 2 + offsetX;
-  const drawY = (size - scaledHeight) / 2 + offsetY;
+  const drawX = (targetWidth - scaledWidth) / 2 + offsetX * targetWidth;
+  const drawY = (targetHeight - scaledHeight) / 2 + offsetY * targetHeight;
 
   ctx.save();
   ctx.drawImage(image, drawX, drawY, scaledWidth, scaledHeight);

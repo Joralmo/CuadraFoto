@@ -4,9 +4,9 @@ import { usePersistentState } from './usePersistentState';
 import {
   createInitialExportSettings,
   DEFAULT_JPG_QUALITY,
-  getExportResolutionOptions,
-  syncExportSettingsWithOptions
-} from '../lib/export/exportResolutionOptions';
+  getExportPresetById,
+  getExportPresetOptions
+} from '../lib/export/exportPresetOptions';
 import {
   deliverExportedImage,
   exportSquareImage,
@@ -18,7 +18,8 @@ import type { EditorState } from '../types/editor';
 import type {
   ExportDeliveryMethod,
   ExportFormat,
-  ExportResolutionOption,
+  ExportPresetId,
+  ExportPresetOption,
   ExportResult,
   ExportSettings
 } from '../types/export';
@@ -39,9 +40,19 @@ const initialStatus: ExportStatus = {
 };
 const EXPORT_FORMAT_STORAGE_KEY = 'cuadrafoto:export-format';
 const JPG_QUALITY_STORAGE_KEY = 'cuadrafoto:jpg-quality';
+const EXPORT_PRESET_STORAGE_KEY = 'cuadrafoto:export-preset';
 
 function isExportFormat(value: string): value is ExportFormat {
   return value === 'jpg' || value === 'png';
+}
+
+function isExportPresetId(value: string): value is ExportPresetId {
+  return (
+    value === 'story' ||
+    value === 'portrait' ||
+    value === 'square' ||
+    value === 'landscape'
+  );
 }
 
 function getSuccessMessage(method: ExportDeliveryMethod) {
@@ -78,14 +89,22 @@ export function useExportController(
         typeof value === 'number' && value >= 0.7 && value <= 1
     }
   );
-  const resolutionOptions = useMemo<ExportResolutionOption[]>(
-    () => getExportResolutionOptions(image),
-    [image]
+  const [persistedPresetId, setPersistedPresetId] = usePersistentState<ExportPresetId>(
+    EXPORT_PRESET_STORAGE_KEY,
+    'square',
+    {
+      validate: isExportPresetId
+    }
+  );
+  const presetOptions = useMemo<ExportPresetOption[]>(
+    () => getExportPresetOptions(),
+    []
   );
   const [settings, setSettings] = useState<ExportSettings>(() =>
-    createInitialExportSettings(image, {
+    createInitialExportSettings({
       format: persistedFormat,
-      jpgQuality: persistedJpgQuality
+      jpgQuality: persistedJpgQuality,
+      presetId: persistedPresetId
     })
   );
   const [preparedResult, setPreparedResult] = useState<ExportResult | null>(null);
@@ -93,20 +112,15 @@ export function useExportController(
 
   useEffect(() => {
     setSettings(
-      createInitialExportSettings(image, {
+      createInitialExportSettings({
         format: persistedFormat,
-        jpgQuality: persistedJpgQuality
+        jpgQuality: persistedJpgQuality,
+        presetId: persistedPresetId
       })
     );
     setPreparedResult(null);
     setStatus(initialStatus);
-  }, [image]);
-
-  useEffect(() => {
-    setSettings((currentSettings) =>
-      syncExportSettingsWithOptions(currentSettings, resolutionOptions)
-    );
-  }, [resolutionOptions]);
+  }, [image, persistedFormat, persistedJpgQuality, persistedPresetId]);
 
   useEffect(() => {
     setPersistedFormat(settings.format);
@@ -116,8 +130,13 @@ export function useExportController(
     setPersistedJpgQuality(settings.jpgQuality);
   }, [setPersistedJpgQuality, settings.jpgQuality]);
 
+  useEffect(() => {
+    setPersistedPresetId(settings.presetId);
+  }, [setPersistedPresetId, settings.presetId]);
+
   return {
-    resolutionOptions,
+    presetOptions,
+    selectedPreset: getExportPresetById(settings.presetId),
     preparedResult,
     settings,
     status,
@@ -136,20 +155,15 @@ export function useExportController(
         jpgQuality
       }));
     },
-    setResolutionId: (resolutionId: string) => {
+    setPresetId: (presetId: ExportPresetId) => {
       setSettings((currentSettings) => {
-        const matchedOption = resolutionOptions.find(
-          (option) => option.id === resolutionId
-        );
-
-        if (!matchedOption) {
-          return currentSettings;
-        }
+        const matchedOption = getExportPresetById(presetId);
 
         return {
           ...currentSettings,
-          resolutionId,
-          size: matchedOption.size
+          presetId,
+          width: matchedOption.width,
+          height: matchedOption.height
         };
       });
     },
@@ -182,10 +196,11 @@ export function useExportController(
       try {
         const result = await exportSquareImage({
           format: settings.format,
+          height: settings.height,
           image,
           editorState,
           jpgQuality: settings.jpgQuality,
-          size: settings.size
+          width: settings.width
         });
 
         if (shouldUseStagedExportFlow()) {

@@ -45,7 +45,7 @@ export function BackgroundControls({
   return (
     <SectionCard
       eyebrow="Fondo"
-      title="Fondo del cuadrado"
+      title="Fondo del formato"
       description="Elige un fondo difuminado o un color liso para completar tu imagen."
     >
       <div className="space-y-4">

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { composeSquareImage } from '../lib/canvas/composeSquareImage';
+import { composeExportImage } from '../lib/canvas/composeSquareImage';
 import { setupHiDpiCanvas } from '../lib/canvas/setupHiDpiCanvas';
 import type { EditorState } from '../types/editor';
 import type { LoadedImageAsset } from '../types/image';
@@ -8,14 +8,26 @@ import type { LoadedImageAsset } from '../types/image';
 type UsePreviewCanvasOptions = {
   editorState: EditorState;
   image: LoadedImageAsset;
+  targetHeight: number;
+  targetWidth: number;
+};
+
+type PreviewDisplaySize = {
+  height: number;
+  width: number;
 };
 
 export function usePreviewCanvas({
   editorState,
-  image
+  image,
+  targetHeight,
+  targetWidth
 }: UsePreviewCanvasOptions) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [displaySize, setDisplaySize] = useState(0);
+  const [displaySize, setDisplaySize] = useState<PreviewDisplaySize>({
+    width: 0,
+    height: 0
+  });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -25,10 +37,17 @@ export function usePreviewCanvas({
     }
 
     const updateSize = () => {
-      const nextSize = Math.round(canvas.getBoundingClientRect().width);
+      const bounds = canvas.getBoundingClientRect();
+      const nextSize = {
+        width: Math.round(bounds.width),
+        height: Math.round(bounds.height)
+      };
 
       setDisplaySize((currentSize) =>
-        currentSize === nextSize ? currentSize : nextSize
+        currentSize.width === nextSize.width &&
+        currentSize.height === nextSize.height
+          ? currentSize
+          : nextSize
       );
     };
 
@@ -56,7 +75,7 @@ export function usePreviewCanvas({
   useEffect(() => {
     const canvas = canvasRef.current;
 
-    if (!canvas || displaySize === 0) {
+    if (!canvas || displaySize.width === 0 || displaySize.height === 0) {
       return;
     }
 
@@ -67,22 +86,22 @@ export function usePreviewCanvas({
         return;
       }
 
-      composeSquareImage({
+      composeExportImage({
         ctx,
         editorState,
         image,
-        size: displaySize
+        targetWidth: displaySize.width,
+        targetHeight: displaySize.height
       });
     });
 
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [displaySize, editorState, image]);
+  }, [displaySize, editorState, image, targetHeight, targetWidth]);
 
   return {
     canvasRef,
     displaySize
   };
 }
-

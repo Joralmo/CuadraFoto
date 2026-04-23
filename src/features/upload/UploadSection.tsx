@@ -26,7 +26,7 @@ export function UploadSection({
       description={
         hasSelectedImage
           ? 'Puedes reemplazar la foto actual sin salir del editor.'
-          : 'Empieza con una foto vertical u horizontal y conviértela en una versión cuadrada lista para publicar.'
+          : 'Empieza con una foto vertical u horizontal y conviértela en una versión lista para Instagram.'
       }
     >
       <div className="space-y-3">

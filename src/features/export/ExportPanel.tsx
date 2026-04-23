@@ -2,7 +2,7 @@ import { ActionButton } from '../../components/ActionButton';
 import { SectionCard } from '../../components/SectionCard';
 import type {
   ExportFormat,
-  ExportResolutionOption,
+  ExportPresetOption,
   ExportSettings
 } from '../../types/export';
 
@@ -11,14 +11,13 @@ type ExportPanelProps = {
   isExporting: boolean;
   lastMessage: string | null;
   preparedImageName?: string | null;
-  resolutionOptions: ExportResolutionOption[];
+  selectedPreset: ExportPresetOption;
   settings: ExportSettings;
   onClearPrepared: () => void;
   onExport: () => void;
   onFormatChange: (format: ExportFormat) => void;
   onJpgQualityChange: (value: number) => void;
   onOpenPrepared: () => void;
-  onResolutionChange: (resolutionId: string) => void;
   onSharePrepared: () => void;
 };
 
@@ -36,14 +35,13 @@ export function ExportPanel({
   isExporting,
   lastMessage,
   preparedImageName = null,
-  resolutionOptions,
+  selectedPreset,
   settings,
   onClearPrepared,
   onExport,
   onFormatChange,
   onJpgQualityChange,
   onOpenPrepared,
-  onResolutionChange,
   onSharePrepared
 }: ExportPanelProps) {
   return (
@@ -62,8 +60,10 @@ export function ExportPanel({
             </div>
           </div>
           <div className="rounded-2xl border border-black/10 bg-white/80 px-2 py-3 text-black/60">
-            Tamaño
-            <div className="mt-1 font-semibold text-ink">{settings.size}px</div>
+            Lienzo
+            <div className="mt-1 font-semibold text-ink">
+              {selectedPreset.ratioLabel}
+            </div>
           </div>
           <div className="rounded-2xl border border-black/10 bg-white/80 px-2 py-3 text-black/60">
             Calidad
@@ -77,7 +77,7 @@ export function ExportPanel({
 
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm font-medium text-ink">
-            <span>Formato</span>
+            <span>Formato de archivo</span>
             <span className="text-xs text-black/50">PNG o JPG</span>
           </div>
 
@@ -108,34 +108,35 @@ export function ExportPanel({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm font-medium text-ink">
-            <span>Resolución final</span>
-            <span className="text-xs text-black/50">{settings.size} x {settings.size}</span>
+        <div className="rounded-[1.6rem] border border-black/10 bg-mist/70 px-4 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-ink">
+                {selectedPreset.label}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-black/55">
+                {selectedPreset.description}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-black/10 bg-white px-4 py-3 text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black/40">
+                Ratio
+              </p>
+              <p className="mt-1 text-lg font-semibold text-ink">
+                {selectedPreset.ratioLabel}
+              </p>
+            </div>
           </div>
 
-          <div className="grid gap-3">
-            {resolutionOptions.map((option) => {
-              const isActive = settings.resolutionId === option.id;
-
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={optionButtonClass(isActive)}
-                  aria-pressed={isActive}
-                  onClick={() => {
-                    onResolutionChange(option.id);
-                  }}
-                >
-                  <p className="text-sm font-semibold">
-                    {option.label}
-                    {option.isRecommended ? ' · Recomendado' : ''}
-                  </p>
-                  <p className="mt-1 text-xs opacity-80">{option.description}</p>
-                </button>
-              );
-            })}
+          <div className="mt-4 grid grid-cols-2 gap-3 text-center text-xs">
+            <div className="rounded-2xl border border-black/10 bg-white px-3 py-3 text-black/60">
+              Ancho
+              <div className="mt-1 font-semibold text-ink">{settings.width}px</div>
+            </div>
+            <div className="rounded-2xl border border-black/10 bg-white px-3 py-3 text-black/60">
+              Alto
+              <div className="mt-1 font-semibold text-ink">{settings.height}px</div>
+            </div>
           </div>
         </div>
 
@@ -226,7 +227,9 @@ export function ExportPanel({
           size="large"
           onClick={onExport}
         >
-          {isExporting ? 'Preparando imagen...' : `Descargar ${settings.size} x ${settings.size}`}
+          {isExporting
+            ? 'Preparando imagen...'
+            : `Descargar ${settings.width} x ${settings.height}`}
         </ActionButton>
       </div>
     </SectionCard>
