@@ -14,12 +14,14 @@ import {
 } from './editor.reducer';
 import { FormatPresetSelector } from './FormatPresetSelector';
 import { PreviewCanvas } from './PreviewCanvas';
-import { TransformControls } from './TransformControls';
+import { CollageTemplateSelector } from './CollageTemplateSelector';
+import { LayerControls } from './LayerControls';
 import type { BackgroundMode } from '../../types/editor';
 import type { EditorPreferences } from '../../types/preferences';
 
 type EditorScreenProps = {
-  image: LoadedImageAsset;
+  images: LoadedImageAsset[];
+  onAddFiles: (files: File[]) => void;
 };
 
 const BACKGROUND_MODE_STORAGE_KEY = 'cuadrafoto:background-mode';
@@ -37,7 +39,8 @@ function formatFileSize(fileSize: number) {
   return `${(fileSize / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function EditorScreen({ image }: EditorScreenProps) {
+export function EditorScreen({ images, onAddFiles }: EditorScreenProps) {
+  const image = images[0];
   const [persistedBackgroundMode, setPersistedBackgroundMode] =
     usePersistentState<BackgroundMode>(
       BACKGROUND_MODE_STORAGE_KEY,
@@ -68,15 +71,13 @@ export function EditorScreen({ image }: EditorScreenProps) {
     error: paletteError,
     isLoading: isPaletteLoading
   } = useSuggestedPalette(image);
-  const exportController = useExportController(image, editorState);
+  const exportController = useExportController(images, editorState);
   const selectedPreset = exportController.selectedPreset;
+  const selectedLayer = editorState.layers.find((layer) => layer.id === editorState.selectedLayerId) ?? editorState.layers[0];
 
   useEffect(() => {
-    dispatch({
-      type: 'reset-all',
-      preferences: persistedEditorPreferences
-    });
-  }, [image]);
+    dispatch({ type: 'sync-images', count: images.length });
+  }, [images.length]);
 
   useEffect(() => {
     if (paletteColors.length === 0) {
@@ -109,7 +110,7 @@ export function EditorScreen({ image }: EditorScreenProps) {
         <div className="space-y-4 px-4 pb-4 sm:px-5 sm:pb-5">
           <div className="flex flex-wrap items-center gap-2 text-xs text-black/55">
             <span className="rounded-full border border-black/10 bg-mist px-3 py-1">
-              {image.fileName}
+              {images.length} foto{images.length === 1 ? '' : 's'}
             </span>
             <span className="rounded-full border border-black/10 bg-mist px-3 py-1">
               {image.width} x {image.height}
@@ -130,7 +131,7 @@ export function EditorScreen({ image }: EditorScreenProps) {
 
           <PreviewCanvas
             editorState={editorState}
-            image={image}
+            images={images}
             preset={selectedPreset}
             onPan={(deltaX, deltaY) => {
               dispatch({
@@ -142,19 +143,27 @@ export function EditorScreen({ image }: EditorScreenProps) {
             onScaleChange={(value) => {
               dispatch({ type: 'set-scale', value });
             }}
+            onSelectLayer={(id) => dispatch({ type: 'select-layer', id })}
           />
         </div>
       </SectionCard>
 
-      <TransformControls
-        scale={editorState.scale}
-        onReset={() => {
-          dispatch({ type: 'reset-transform' });
-        }}
-        onScaleChange={(value) => {
-          dispatch({ type: 'set-scale', value });
-        }}
-      />
+      <CollageTemplateSelector selectedId={editorState.templateId} onChange={(value) => dispatch({ type: 'apply-template', value })} />
+
+      {selectedLayer ? <LayerControls
+        layer={selectedLayer}
+        images={images}
+        onAddFiles={onAddFiles}
+        onSelect={(id) => dispatch({ type: 'select-layer', id })}
+        onScale={(value) => dispatch({ type: 'set-scale', value })}
+        onSize={(value) => dispatch({ type: 'set-layer-size', value })}
+        onRotation={(value) => dispatch({ type: 'set-layer-rotation', value })}
+        onOpacity={(value) => dispatch({ type: 'set-layer-opacity', value })}
+        onShape={(value) => dispatch({ type: 'set-layer-shape', value })}
+        onFilter={(value) => dispatch({ type: 'set-layer-filter', value })}
+        onForward={() => dispatch({ type: 'bring-layer-forward' })}
+        onReset={() => dispatch({ type: 'reset-transform' })}
+      /> : null}
 
       <BackgroundControls
         backgroundColor={editorState.backgroundColor}

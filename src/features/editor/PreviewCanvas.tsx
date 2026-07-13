@@ -8,23 +8,25 @@ import type { LoadedImageAsset } from '../../types/image';
 
 type PreviewCanvasProps = {
   editorState: EditorState;
-  image: LoadedImageAsset;
+  images: LoadedImageAsset[];
   preset: ExportPresetOption;
   onPan: (deltaX: number, deltaY: number) => void;
   onScaleChange: (value: number) => void;
+  onSelectLayer: (id: string) => void;
 };
 
 export function PreviewCanvas({
   editorState,
-  image,
+  images,
   preset,
   onPan,
-  onScaleChange
+  onScaleChange,
+  onSelectLayer
 }: PreviewCanvasProps) {
   const instructionsId = useId();
   const { canvasRef, displaySize } = usePreviewCanvas({
     editorState,
-    image,
+    images,
     targetWidth: preset.width,
     targetHeight: preset.height
   });
@@ -35,11 +37,22 @@ export function PreviewCanvas({
 
     onPan(deltaX / displaySize.width, deltaY / displaySize.height);
   };
+  const selectedScale = editorState.layers.find((layer) => layer.id === editorState.selectedLayerId)?.scale ?? 1;
   const gestureHandlers = useCanvasGestures({
-    getScale: () => editorState.scale,
+    getScale: () => selectedScale,
     onPan: normalizedPan,
     onScaleChange
   });
+  const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width;
+    const y = (event.clientY - bounds.top) / bounds.height;
+    const matched = [...editorState.layers].reverse().find((layer) =>
+      Math.abs(x - layer.x) <= layer.width / 2 && Math.abs(y - layer.y) <= layer.height / 2
+    );
+    if (matched) onSelectLayer(matched.id);
+    gestureHandlers.onPointerDown(event);
+  };
   const previewMaxWidth = Math.max(
     220,
     Math.round(520 * (preset.width / preset.height))
@@ -68,12 +81,12 @@ export function PreviewCanvas({
       case '+':
       case '=':
         event.preventDefault();
-        onScaleChange(editorState.scale + scaleStep);
+        onScaleChange(selectedScale + scaleStep);
         break;
       case '-':
       case '_':
         event.preventDefault();
-        onScaleChange(editorState.scale - scaleStep);
+        onScaleChange(selectedScale - scaleStep);
         break;
       default:
         break;
@@ -103,6 +116,7 @@ export function PreviewCanvas({
             aria-describedby={instructionsId}
             onKeyDown={handleKeyDown}
             {...gestureHandlers}
+            onPointerDown={handlePointerDown}
           />
         </div>
       </div>
@@ -112,10 +126,10 @@ export function PreviewCanvas({
         className="grid grid-cols-2 gap-2 text-xs text-black/55"
       >
         <div className="rounded-2xl border border-black/10 bg-white/65 px-3 py-3">
-          Arrastra para reencuadrar
+          Toca una foto y arrástrala
         </div>
         <div className="rounded-2xl border border-black/10 bg-white/65 px-3 py-3">
-          Acerca o aleja con el control
+          Pellizca para hacer zoom
         </div>
       </div>
 

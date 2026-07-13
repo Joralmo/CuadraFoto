@@ -12,6 +12,12 @@ type ImageLoaderState = {
   isLoading: boolean;
 };
 
+type ImageCollectionState = {
+  images: LoadedImageAsset[];
+  error: string | null;
+  isLoading: boolean;
+};
+
 const initialState: ImageLoaderState = {
   image: null,
   error: null,
@@ -220,6 +226,62 @@ export function useImageLoader(file: File | null) {
       URL.revokeObjectURL(objectUrl);
     };
   }, [file]);
+
+  return state;
+}
+
+export function useImageCollection(files: File[]) {
+  const [state, setState] = useState<ImageCollectionState>({ images: [], error: null, isLoading: false });
+
+  useEffect(() => {
+    if (files.length === 0) {
+      setState({ images: [], error: null, isLoading: false });
+      return;
+    }
+    const invalid = files.find((file) => !isSupportedImageFile(file));
+    if (invalid) {
+      setState({ images: [], error: `El archivo ${invalid.name} no es compatible. Usa JPG, JPEG o PNG.`, isLoading: false });
+      return;
+    }
+
+    let cancelled = false;
+    const urls: string[] = [];
+    setState((current) => ({ ...current, error: null, isLoading: true }));
+
+    Promise.all(files.map((file) => new Promise<LoadedImageAsset>((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      urls.push(objectUrl);
+      const element = new Image();
+      element.decoding = 'async';
+      element.onerror = () => reject(new Error(`No se pudo leer ${file.name}.`));
+      element.onload = async () => {
+        try { if (typeof element.decode === 'function') await element.decode(); } catch { /* onload is enough */ }
+        const preview = await createPreviewSource(element);
+        resolve({
+          element,
+          fileName: file.name,
+          fileSize: file.size,
+          isPreviewOptimized: preview.isPreviewOptimized,
+          mimeType: file.type || 'image/jpeg',
+          previewHeight: preview.previewHeight,
+          previewSource: preview.previewSource,
+          previewWidth: preview.previewWidth,
+          width: element.naturalWidth,
+          height: element.naturalHeight
+        });
+      };
+      element.src = objectUrl;
+    }))).then((images) => {
+      if (!cancelled) setState({ images, error: null, isLoading: false });
+    }).catch((error: unknown) => {
+      if (!cancelled) setState({ images: [], error: error instanceof Error ? error.message : 'No se pudieron abrir las imágenes.', isLoading: false });
+    });
+
+    return () => {
+      cancelled = true;
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
 
   return state;
 }

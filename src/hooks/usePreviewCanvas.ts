@@ -7,7 +7,7 @@ import type { LoadedImageAsset } from '../types/image';
 
 type UsePreviewCanvasOptions = {
   editorState: EditorState;
-  image: LoadedImageAsset;
+  images: LoadedImageAsset[];
   targetHeight: number;
   targetWidth: number;
 };
@@ -19,7 +19,7 @@ type PreviewDisplaySize = {
 
 export function usePreviewCanvas({
   editorState,
-  image,
+  images,
   targetHeight,
   targetWidth
 }: UsePreviewCanvasOptions) {
@@ -89,7 +89,7 @@ export function usePreviewCanvas({
       composeExportImage({
         ctx,
         editorState,
-        image,
+        images,
         targetWidth: displaySize.width,
         targetHeight: displaySize.height
       });
@@ -98,7 +98,7 @@ export function usePreviewCanvas({
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [displaySize, editorState, image, targetHeight, targetWidth]);
+  }, [displaySize, editorState, images, targetHeight, targetWidth]);
 
   return {
     canvasRef,

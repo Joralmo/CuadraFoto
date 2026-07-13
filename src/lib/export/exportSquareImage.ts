@@ -10,7 +10,7 @@ import type { LoadedImageAsset } from '../../types/image';
 type ExportSquareImageOptions = {
   format: ExportFormat;
   height: number;
-  image: LoadedImageAsset;
+  images: LoadedImageAsset[];
   editorState: EditorState;
   jpgQuality: number;
   width: number;
@@ -189,7 +189,7 @@ export async function shareExportedImage(
 export async function exportSquareImage({
   format,
   height,
-  image,
+  images,
   editorState,
   jpgQuality,
   width
@@ -212,7 +212,7 @@ export async function exportSquareImage({
     composeExportImage({
       ctx,
       editorState,
-      image,
+      images,
       targetWidth: width,
       targetHeight: height,
       qualityHint: 'export'
@@ -227,7 +227,7 @@ export async function exportSquareImage({
 
     return {
       blob,
-      fileName: buildExportFileName(image.fileName, format, width, height),
+      fileName: buildExportFileName(images[0]?.fileName ?? 'collage', format, width, height),
       format,
       height,
       mimeType,

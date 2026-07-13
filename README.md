@@ -1,6 +1,15 @@
 # CuadraFoto
 
-Base de proyecto para una PWA mobile-first hecha con `Vite + React + TypeScript + Tailwind CSS + vite-plugin-pwa`.
+PWA mobile-first para crear composiciones y collages de fotos directamente en el navegador.
+
+## Editor de collage
+
+- Carga múltiple de imágenes JPG y PNG
+- Edición libre por capas con arrastre y zoom táctil
+- Plantillas en columnas, lateral y foto destacada con cuadrícula
+- Formas cuadrada, redondeada, circular, ovalada, corazón y estrella
+- Rotación, tamaño, opacidad y filtros independientes por foto
+- Exportación local en PNG o JPG en formatos para redes sociales
 
 ## Stack
 
@@ -99,5 +108,6 @@ pnpm dev
 pnpm build
 pnpm preview
 pnpm check
+pnpm test
 pnpm start
 ```

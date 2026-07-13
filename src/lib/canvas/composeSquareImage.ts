@@ -1,10 +1,10 @@
 import type { CanvasCompositionOptions } from '../../types/editor';
 import { drawBlurBackground } from './drawBlurBackground';
 import { drawColorBackground } from './drawColorBackground';
-import { drawMainImage } from './drawMainImage';
+import { drawCollageLayer } from './drawCollageLayer';
 
 function getCompositionSource(
-  image: CanvasCompositionOptions['image'],
+  image: CanvasCompositionOptions['images'][number],
   qualityHint: NonNullable<CanvasCompositionOptions['qualityHint']>
 ) {
   if (qualityHint === 'export') {
@@ -25,12 +25,14 @@ function getCompositionSource(
 export function composeExportImage({
   ctx,
   editorState,
-  image,
+  images,
   qualityHint = 'preview',
   targetWidth,
   targetHeight
 }: CanvasCompositionOptions) {
-  const compositionSource = getCompositionSource(image, qualityHint);
+  const backgroundImage = images[0];
+  if (!backgroundImage) return;
+  const compositionSource = getCompositionSource(backgroundImage, qualityHint);
 
   ctx.clearRect(0, 0, targetWidth, targetHeight);
 
@@ -54,15 +56,19 @@ export function composeExportImage({
     });
   }
 
-  drawMainImage({
-    ctx,
-    image: compositionSource.source,
-    imageWidth: compositionSource.width,
-    imageHeight: compositionSource.height,
-    targetWidth,
-    targetHeight,
-    scale: editorState.scale,
-    offsetX: editorState.offsetX,
-    offsetY: editorState.offsetY
+  editorState.layers.forEach((layer) => {
+    const asset = images[layer.sourceIndex];
+    if (!asset) return;
+    const source = getCompositionSource(asset, qualityHint);
+    drawCollageLayer({
+      ctx,
+      layer,
+      image: source.source,
+      imageWidth: source.width,
+      imageHeight: source.height,
+      targetWidth,
+      targetHeight,
+      selected: qualityHint === 'preview' && layer.id === editorState.selectedLayerId
+    });
   });
 }

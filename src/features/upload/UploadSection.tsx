@@ -6,7 +6,7 @@ import { SectionCard } from '../../components/SectionCard';
 type UploadSectionProps = {
   fileName?: string;
   isLoading?: boolean;
-  onFileSelect: (file: File) => void;
+  onFileSelect: (files: File[]) => void;
 };
 
 export function UploadSection({
@@ -47,22 +47,23 @@ export function UploadSection({
           ref={inputRef}
           type="file"
           accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+          multiple
           aria-describedby={helpId}
           className="sr-only"
           onChange={(event) => {
-            const file = event.target.files?.[0];
+            const files = Array.from(event.target.files ?? []);
 
-            if (!file) {
+            if (files.length === 0) {
               return;
             }
 
-            onFileSelect(file);
+            onFileSelect(files);
             event.currentTarget.value = '';
           }}
         />
 
         <p id={helpId} className="text-xs leading-5 text-black/55">
-          Compatibles: JPG, JPEG y PNG.
+          Compatibles: JPG, JPEG y PNG. Puedes elegir varias a la vez.
         </p>
 
         <div className="rounded-2xl border border-black/10 bg-mist px-4 py-3 text-sm text-black/70">

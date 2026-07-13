@@ -71,7 +71,7 @@ function getSuccessMessage(method: ExportDeliveryMethod) {
 }
 
 export function useExportController(
-  image: LoadedImageAsset,
+  images: LoadedImageAsset[],
   editorState: EditorState
 ) {
   const [persistedFormat, setPersistedFormat] = usePersistentState<ExportFormat>(
@@ -120,7 +120,7 @@ export function useExportController(
     );
     setPreparedResult(null);
     setStatus(initialStatus);
-  }, [image, persistedFormat, persistedJpgQuality, persistedPresetId]);
+  }, [images, persistedFormat, persistedJpgQuality, persistedPresetId]);
 
   useEffect(() => {
     setPersistedFormat(settings.format);
@@ -197,7 +197,7 @@ export function useExportController(
         const result = await exportSquareImage({
           format: settings.format,
           height: settings.height,
-          image,
+          images,
           editorState,
           jpgQuality: settings.jpgQuality,
           width: settings.width

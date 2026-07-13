@@ -5,12 +5,12 @@ import { SectionCard } from '../components/SectionCard';
 import { EditorScreen } from '../features/editor/EditorScreen';
 import { InstallHint } from '../features/pwa/InstallHint';
 import { UploadSection } from '../features/upload/UploadSection';
-import { useImageLoader } from '../hooks/useImageLoader';
+import { useImageCollection } from '../hooks/useImageLoader';
 
 export function App() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { image, error, isLoading } = useImageLoader(selectedFile);
-  const hasImage = Boolean(image);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const { images, error, isLoading } = useImageCollection(selectedFiles);
+  const hasImage = images.length > 0;
 
   return (
     <AppShell>
@@ -32,8 +32,8 @@ export function App() {
               CuadraFoto
             </h1>
             <p className="max-w-md text-sm leading-6 text-black/70">
-              Convierte tus fotos en formatos tipo Instagram, ajusta el encuadre
-              y descárgalas listas para publicar.
+              Combina varias fotos, aplica formas y efectos, y descarga tu collage
+              listo para publicar.
             </p>
           </div>
         </div>
@@ -72,13 +72,18 @@ export function App() {
         </SectionCard>
       ) : null}
 
-      {hasImage && image ? <EditorScreen image={image} /> : null}
+      {hasImage ? (
+        <EditorScreen
+          images={images}
+          onAddFiles={(files) => setSelectedFiles((current) => [...current, ...files])}
+        />
+      ) : null}
 
       <UploadSection
-        fileName={selectedFile?.name}
+        fileName={selectedFiles.length > 0 ? `${selectedFiles.length} foto${selectedFiles.length === 1 ? '' : 's'}` : undefined}
         isLoading={isLoading}
-        onFileSelect={(file) => {
-          setSelectedFile(file);
+        onFileSelect={(files) => {
+          setSelectedFiles(files);
         }}
       />
 
